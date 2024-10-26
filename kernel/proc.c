@@ -720,7 +720,6 @@ void find_decessors(struct child_processes *cp, int pid)
   for (thisProc = &proc[0]; thisProc < &proc[NPROC]; thisProc++)
   {
     acquire(&thisProc->lock);
-    // printf("pid = %d\n", thisProc->pid);
     release(&thisProc->lock);
     struct proc *thisPP;
     int thisPPPid = -1;
@@ -730,7 +729,6 @@ void find_decessors(struct child_processes *cp, int pid)
       thisPP = thisProc->parent;
       release(&wait_lock);
       acquire(&thisPP->lock);
-      // kir to os
       thisPPPid = thisPP->pid;
       release(&thisPP->lock);
     }
@@ -766,7 +764,7 @@ struct
 {
   struct report reports[MAX_REPORT_BUFFER_SIZE];
   int numberOfReports;
-  int writeIndex; // Circle loop
+  int writeIndex;
 } _internal_report_list;
 
 void add_report_traps(char *pname, int pid, uint scause, uint sepc, uint stval)
