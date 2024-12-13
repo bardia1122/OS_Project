@@ -81,6 +81,22 @@ struct trapframe
   /* 272 */ uint64 t5;
   /* 280 */ uint64 t6;
 };
+#define MAX_THREAD 4
+enum threadstate
+{
+  THREAD_FREE,
+  THREAD_RUNNABLE,
+  THREAD_RUNNING,
+  THREAD_JOINED
+};
+
+struct thread
+{
+  enum threadstate state;
+  struct trapframe *trapframe;
+  uint id;
+  uint join;
+};
 
 enum procstate
 {
@@ -93,7 +109,7 @@ enum procstate
 };
 
 // Per-process state
-#define MAX_THREAD 4
+
 struct proc
 {
   struct spinlock lock;
@@ -152,20 +168,4 @@ struct report_traps
 {
   struct report reports[MAX_REPORT_BUFFER_SIZE];
   int count;
-};
-
-enum threadstate
-{
-  THREAD_FREE,
-  THREAD_RUNNABLE,
-  THREAD_RUNNING,
-  THREAD_JOINED
-};
-
-struct thread
-{
-  enum threadstate state;
-  struct trapframe *trapframe;
-  uint id;
-  uint join;
 };

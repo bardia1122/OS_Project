@@ -141,6 +141,7 @@ UPROGS=\
 	$U/_zombie\
 	$U/_chptest\
 	$U/_trap_report\
+	$U/_thread_test\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

@@ -38,3 +38,6 @@ entry("sleep");
 entry("uptime");
 entry("chp");
 entry("report");
+entry("cthread");
+entry("jthread");
+entry("sthread");

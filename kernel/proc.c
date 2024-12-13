@@ -492,19 +492,21 @@ void scheduler(void)
       acquire(&p->lock);
       if (p->state == RUNNABLE)
       {
+        // printf("\nvaredshod111  : %d\n", p->pid);
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
         c->proc = p;
         p->state = RUNNING;
-        struct trapframe temp;
         struct thread *t;
         if (p->current_thread != 0)
         {
-          *(p->current_thread->trapframe) = *(p->trapframe);
+          if (p->current_thread->state != THREAD_FREE)
+          {
+            *(p->current_thread->trapframe) = *(p->trapframe);
+          }
           for (t = p->threads; t < &p->threads[4]; t++)
           {
-            temp = *(p->trapframe);
             c->proc = p;
             p->state = RUNNING;
             if (t->state == THREAD_RUNNABLE)
@@ -513,8 +515,12 @@ void scheduler(void)
               *(p->trapframe) = *(t->trapframe);
               p->current_thread = t;
               swtch(&c->context, &p->context);
-              t->state = THREAD_RUNNABLE;
-              *(t->trapframe) = temp;
+              if (t->state != THREAD_FREE &&
+                  t->state != THREAD_JOINED)
+              {
+                t->state = THREAD_RUNNABLE;
+                *(t->trapframe) = *(p->trapframe);
+              }
             }
           }
         }
@@ -914,6 +920,7 @@ int join_thread(struct thread *curt, int id)
       curt->state = THREAD_JOINED;
       curt->join = id;
       yield();
+
       return 0;
     }
   }

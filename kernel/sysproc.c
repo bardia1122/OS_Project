@@ -144,5 +144,9 @@ sys_jthread(void)
 uint64
 sys_sthread(void)
 {
+  uint64 id;
+  argaddr(0, &id);
+  stop_thread(id);
+  printf("aa\n");
   return 0;
 }

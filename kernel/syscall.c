@@ -144,7 +144,14 @@ void syscall(void)
   {
     // Use num to lookup the system call function for num, call it,
     // and store its return value in p->trapframe->a0
-    p->trapframe->a0 = syscalls[num]();
+    if (num == SYS_jthread || num == SYS_write)
+    {
+      syscalls[num]();
+    }
+    else
+    {
+      p->trapframe->a0 = syscalls[num]();
+    }
   }
   else
   {
