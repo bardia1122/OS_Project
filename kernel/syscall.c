@@ -99,6 +99,9 @@ extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
 extern uint64 sys_chp(void);
 extern uint64 sys_report(void);
+extern uint64 sys_cthread(void);
+extern uint64 sys_jthread(void);
+extern uint64 sys_sthread(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -126,6 +129,9 @@ static uint64 (*syscalls[])(void) = {
     [SYS_close] sys_close,
     [SYS_chp] sys_chp,
     [SYS_report] sys_report,
+    [SYS_cthread] sys_cthread,
+    [SYS_jthread] sys_jthread,
+    [SYS_sthread] sys_sthread,
 };
 
 void syscall(void)

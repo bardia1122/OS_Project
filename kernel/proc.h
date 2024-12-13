@@ -93,6 +93,7 @@ enum procstate
 };
 
 // Per-process state
+#define MAX_THREAD 4
 struct proc
 {
   struct spinlock lock;
@@ -116,6 +117,10 @@ struct proc
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  // threads
+  struct thread threads[MAX_THREAD];
+  struct thread *current_thread;
 };
 
 struct proc_info
@@ -147,4 +152,20 @@ struct report_traps
 {
   struct report reports[MAX_REPORT_BUFFER_SIZE];
   int count;
+};
+
+enum threadstate
+{
+  THREAD_FREE,
+  THREAD_RUNNABLE,
+  THREAD_RUNNING,
+  THREAD_JOINED
+};
+
+struct thread
+{
+  enum threadstate state;
+  struct trapframe *trapframe;
+  uint id;
+  uint join;
 };

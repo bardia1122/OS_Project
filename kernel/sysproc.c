@@ -121,3 +121,28 @@ sys_report(void)
   copyout(myproc()->pagetable, po, (char *)&traps, sizeof(traps));
   return 0;
 }
+
+uint64
+sys_cthread(void)
+{
+  uint64 func_ptr, arg_ptr, stack;
+  argaddr(0, (uint64 *)&func_ptr);
+  argaddr(1, (uint64 *)&arg_ptr);
+  argaddr(2, (uint64 *)&stack);
+  return create_thread((void *)func_ptr, (void *)arg_ptr, (void *)stack);
+}
+
+uint64
+sys_jthread(void)
+{
+  uint64 id;
+  argaddr(0, &id);
+  join_thread(myproc()->current_thread, id);
+  return 0;
+}
+
+uint64
+sys_sthread(void)
+{
+  return 0;
+}

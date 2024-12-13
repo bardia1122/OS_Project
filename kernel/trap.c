@@ -70,10 +70,28 @@ void usertrap(void)
   }
   else
   {
-    add_report_traps(p->name, p->pid, r_scause(), r_sepc(), r_stval());
-    printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
-    printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
-    setkilled(p);
+    if (p->trapframe->epc == -2 && p->trapframe->ra == -1)
+    {
+      struct thread *t;
+      for (t = myproc()->threads; t < &myproc()->threads[MAX_THREAD]; t++)
+      {
+        if (t->join == myproc()->current_thread->id && t->state == THREAD_JOINED)
+        {
+          t->join = 0;
+          t->state = THREAD_RUNNABLE;
+        }
+      }
+      stop_thread(p->current_thread->id);
+      usertrapret();
+      return;
+    }
+    else
+    {
+      add_report_traps(p->name, p->pid, r_scause(), r_sepc(), r_stval());
+      printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
+      printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
+      setkilled(p);
+    }
   }
 
   if (killed(p))

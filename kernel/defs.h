@@ -11,6 +11,7 @@ struct superblock;
 struct proc_info;
 struct child_processes;
 struct report_traps;
+struct thread;
 
 // bio.c
 void binit(void);
@@ -112,6 +113,9 @@ void procdump(void);
 void find_children(struct child_processes *cp);
 void add_report_traps(char *pname, int pid, uint scause, uint sepc, uint stval);
 void report_traps(struct report_traps *traps);
+int create_thread(void *(*function)(void *), void *arg, void *stack);
+int stop_thread(int id);
+int join_thread(struct thread *curt, int id);
 // swtch.S
 void swtch(struct context *, struct context *);
 

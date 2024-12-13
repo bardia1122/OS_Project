@@ -22,3 +22,6 @@
 #define SYS_close 21
 #define SYS_chp 22
 #define SYS_report 23
+#define SYS_cthread 24
+#define SYS_jthread 25
+#define SYS_sthread 26

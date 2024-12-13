@@ -53,6 +53,13 @@ void procinit(void)
   for (p = proc; p < &proc[NPROC]; p++)
   {
     initlock(&p->lock, "proc");
+    p->current_thread = 0;
+    struct thread *t;
+    for (t = p->threads; t < &p->threads[MAX_THREAD]; t++)
+    {
+      t->state = THREAD_FREE;
+    }
+
     p->state = UNUSED;
     p->kstack = KSTACK((int)(p - proc));
   }
@@ -383,7 +390,18 @@ void exit(int status)
   wakeup(p->parent);
 
   acquire(&p->lock);
+  struct thread *t;
+  for (t = myproc()->threads; t < &myproc()->threads[MAX_THREAD]; t++)
+  {
+    if (t->state != THREAD_FREE)
+    {
+      kfree(t->trapframe);
+      t->state = THREAD_FREE;
+    }
+  }
 
+  myproc()->current_thread = 0;
+  freeproc(p);
   p->xstate = status;
   p->state = ZOMBIE;
 
@@ -477,9 +495,33 @@ void scheduler(void)
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
-        p->state = RUNNING;
         c->proc = p;
-        swtch(&c->context, &p->context);
+        p->state = RUNNING;
+        struct trapframe temp;
+        struct thread *t;
+        if (p->current_thread != 0)
+        {
+          *(p->current_thread->trapframe) = *(p->trapframe);
+          for (t = p->threads; t < &p->threads[4]; t++)
+          {
+            temp = *(p->trapframe);
+            c->proc = p;
+            p->state = RUNNING;
+            if (t->state == THREAD_RUNNABLE)
+            {
+              t->state = THREAD_RUNNING;
+              *(p->trapframe) = *(t->trapframe);
+              p->current_thread = t;
+              swtch(&c->context, &p->context);
+              t->state = THREAD_RUNNABLE;
+              *(t->trapframe) = temp;
+            }
+          }
+        }
+        else
+        {
+          swtch(&c->context, &p->context);
+        }
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
@@ -756,7 +798,6 @@ void find_children(struct child_processes *cp)
   acquire(&p->lock);
   int pid = p->pid;
   release(&p->lock);
-
   find_decessors(cp, pid);
 }
 
@@ -810,4 +851,94 @@ void report_traps(struct report_traps *traps)
       }
     }
   }
+}
+
+int next_thread_id = 1;
+struct spinlock thread_id_lock;
+
+void thread_init()
+{
+  initlock(&thread_id_lock, "thread_id_lock");
+}
+
+int create_thread(void *(*function)(void *), void *arg, void *stack)
+{
+  struct proc *currentp = myproc();
+  struct thread *t;
+  struct thread *MainT;
+  if (currentp->current_thread == 0)
+  {
+    MainT = &currentp->threads[0];
+    MainT->trapframe = (struct trapframe *)kalloc();
+    if (MainT->trapframe == 0)
+    {
+      return -1;
+    }
+    *(MainT->trapframe) = *(currentp->trapframe);
+    MainT->id = next_thread_id++;
+    MainT->state = THREAD_RUNNABLE;
+    MainT->join = 0;
+    currentp->current_thread = MainT;
+  }
+  for (t = currentp->threads; t < &currentp->threads[4]; t++)
+  {
+    if (t->state == THREAD_FREE)
+    {
+      t->trapframe = (struct trapframe *)kalloc();
+      if (t->trapframe == 0)
+      {
+        return -1;
+      }
+      memset(t->trapframe, 0, sizeof(*t->trapframe));
+      t->trapframe->a0 = (uint64)arg;
+      t->trapframe->epc = (uint64)function;
+      t->trapframe->sp = (uint64)(stack) + 1024;
+      t->trapframe->ra = (uint64)-1;
+      t->state = THREAD_RUNNABLE;
+      t->join = 0;
+      t->id = next_thread_id++;
+
+      return t->id;
+    }
+  }
+  return -1;
+}
+
+int join_thread(struct thread *curt, int id)
+{
+  struct thread *t;
+  for (t = myproc()->threads; t < &myproc()->threads[4]; t++)
+  {
+    if (t->id == id && t->state != THREAD_FREE)
+    {
+      curt->state = THREAD_JOINED;
+      curt->join = id;
+      yield();
+      return 0;
+    }
+  }
+  return -1;
+}
+
+int stop_thread(int id)
+{
+  struct proc *p = myproc();
+  struct thread *t;
+  printf("%d is stopping id:%d\n", p->current_thread->id, id);
+
+  for (t = p->threads; t <= &p->threads[3]; t++)
+  {
+    if (t->id == id && t->state != THREAD_FREE)
+    {
+      if (t->state == THREAD_RUNNING || t->state == THREAD_RUNNABLE)
+      {
+        t->state = THREAD_FREE;
+        kfree(t->trapframe);
+        t->trapframe = 0;
+        yield();
+        return 0;
+      }
+    }
+  }
+  return -1;
 }
