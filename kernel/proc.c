@@ -859,7 +859,7 @@ void report_traps(struct report_traps *traps)
   }
 }
 
-int next_thread_id = 1;
+int thread_num = 1;
 struct spinlock thread_id_lock;
 
 void thread_init()
@@ -869,24 +869,24 @@ void thread_init()
 
 int create_thread(void *(*function)(void *), void *arg, void *stack)
 {
-  struct proc *currentp = myproc();
+  struct proc *thisProcess = myproc();
   struct thread *t;
-  struct thread *MainT;
-  if (currentp->current_thread == 0)
+  struct thread *mainThread;
+  if (thisProcess->current_thread == 0)
   {
-    MainT = &currentp->threads[0];
-    MainT->trapframe = (struct trapframe *)kalloc();
-    if (MainT->trapframe == 0)
+    mainThread = &thisProcess->threads[0];
+    mainThread->trapframe = (struct trapframe *)kalloc();
+    if (mainThread->trapframe == 0)
     {
       return -1;
     }
-    *(MainT->trapframe) = *(currentp->trapframe);
-    MainT->id = next_thread_id++;
-    MainT->state = THREAD_RUNNABLE;
-    MainT->join = 0;
-    currentp->current_thread = MainT;
+    *(mainThread->trapframe) = *(thisProcess->trapframe);
+    mainThread->id = thread_num++;
+    mainThread->state = THREAD_RUNNABLE;
+    mainThread->join = 0;
+    thisProcess->current_thread = mainThread;
   }
-  for (t = currentp->threads; t < &currentp->threads[4]; t++)
+  for (t = thisProcess->threads; t < &thisProcess->threads[4]; t++)
   {
     if (t->state == THREAD_FREE)
     {
@@ -902,7 +902,7 @@ int create_thread(void *(*function)(void *), void *arg, void *stack)
       t->trapframe->ra = (uint64)-1;
       t->state = THREAD_RUNNABLE;
       t->join = 0;
-      t->id = next_thread_id++;
+      t->id = thread_num++;
 
       return t->id;
     }
@@ -910,17 +910,16 @@ int create_thread(void *(*function)(void *), void *arg, void *stack)
   return -1;
 }
 
-int join_thread(struct thread *curt, int id)
+int join_thread(struct thread *thisThread, int id)
 {
   struct thread *t;
   for (t = myproc()->threads; t < &myproc()->threads[4]; t++)
   {
     if (t->id == id && t->state != THREAD_FREE)
     {
-      curt->state = THREAD_JOINED;
-      curt->join = id;
+      thisThread->state = THREAD_JOINED;
+      thisThread->join = id;
       yield();
-
       return 0;
     }
   }
@@ -931,7 +930,7 @@ int stop_thread(int id)
 {
   struct proc *p = myproc();
   struct thread *t;
-  printf("%d is stopping id:%d\n", p->current_thread->id, id);
+  printf("Thread number %d is stopping id: %d\n", p->current_thread->id, id);
 
   for (t = p->threads; t <= &p->threads[3]; t++)
   {
