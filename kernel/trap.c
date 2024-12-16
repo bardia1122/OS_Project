@@ -70,7 +70,6 @@ void usertrap(void)
   }
   else
   {
-    // test
     if (p->trapframe->epc == -2 && p->trapframe->ra == -1)
     {
       struct thread *t;

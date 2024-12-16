@@ -2,7 +2,7 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
-volatile int a = 0, b = 0, c = 1;
+volatile int a = 0, b = 0, c = 0;
 
 void *my_thread(void *arg)
 {
@@ -42,7 +42,6 @@ int main(int argc, char *argv[])
     jthread(tc);
 
     printf("done joining\n");
-    // while (1);
 
     exit(0);
 }

@@ -492,7 +492,6 @@ void scheduler(void)
       acquire(&p->lock);
       if (p->state == RUNNABLE)
       {
-        // printf("\nvaredshod111  : %d\n", p->pid);
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
@@ -881,7 +880,8 @@ int create_thread(void *(*function)(void *), void *arg, void *stack)
       return -1;
     }
     *(mainThread->trapframe) = *(thisProcess->trapframe);
-    mainThread->id = thread_num++;
+    mainThread->id = thread_num;
+    thread_num++;
     mainThread->state = THREAD_RUNNABLE;
     mainThread->join = 0;
     thisProcess->current_thread = mainThread;
@@ -897,12 +897,13 @@ int create_thread(void *(*function)(void *), void *arg, void *stack)
       }
       memset(t->trapframe, 0, sizeof(*t->trapframe));
       t->trapframe->a0 = (uint64)arg;
-      t->trapframe->epc = (uint64)function;
+      t->trapframe->epc = (uint64)function; // entry program counter >:)
       t->trapframe->sp = (uint64)(stack) + 1024;
       t->trapframe->ra = (uint64)-1;
       t->state = THREAD_RUNNABLE;
       t->join = 0;
-      t->id = thread_num++;
+      t->id = thread_num;
+      thread_num++;
 
       return t->id;
     }
@@ -919,7 +920,7 @@ int join_thread(struct thread *thisThread, int id)
     {
       thisThread->state = THREAD_JOINED;
       thisThread->join = id;
-      yield();
+      yield(); // back to scheduler
       return 0;
     }
   }
