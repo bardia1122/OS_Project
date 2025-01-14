@@ -12,6 +12,7 @@ struct proc_info;
 struct child_processes;
 struct report_traps;
 struct thread;
+struct top;
 
 // bio.c
 void binit(void);
@@ -116,6 +117,10 @@ void report_traps(struct report_traps *traps);
 int create_thread(void *(*function)(void *), void *arg, void *stack);
 int stop_thread(int id);
 int join_thread(struct thread *curt, int id);
+void calcu_usage(struct proc_info *po);
+int total_usages(struct top *t);
+int cpu_set_quota(int pid, int quota);
+int fork2(int deadline);
 // swtch.S
 void swtch(struct context *, struct context *);
 

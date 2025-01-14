@@ -97,7 +97,14 @@ struct thread
   uint id;
   uint join;
 };
-
+struct cpu_usage
+{
+  uint sum_of_ticks;
+  uint start_tick;
+  uint quota;
+  uint has_deadline;
+  uint deadline;
+};
 enum procstate
 {
   UNUSED,
@@ -137,6 +144,7 @@ struct proc
   // threads
   struct thread threads[MAX_THREAD];
   struct thread *current_thread;
+  struct cpu_usage usage;
 };
 
 struct proc_info
@@ -145,6 +153,12 @@ struct proc_info
   int pid;
   int ppid;
   enum procstate state;
+  struct cpu_usage usage;
+};
+struct top
+{
+  int count;
+  struct proc_info processes[NPROC];
 };
 
 struct child_processes

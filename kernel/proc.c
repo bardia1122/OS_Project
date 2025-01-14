@@ -477,21 +477,95 @@ void scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
+  struct proc *low_priority[NPROC];
 
   c->proc = 0;
   for (;;)
   {
+    int low_priority_n = 0;
+    struct proc *shortest_job = 0;
     // The most recent process to run may have had interrupts
     // turned off; enable them to avoid a deadlock if all
     // processes are waiting.
     intr_on();
-
     int found = 0;
+    // start
+    int min = 0;
     for (p = proc; p < &proc[NPROC]; p++)
+    {
+      if (p->state == RUNNABLE)
+      {
+        if (p->usage.sum_of_ticks >= p->usage.quota)
+        {
+          low_priority[low_priority_n++] = p;
+          continue;
+        }
+
+        if (shortest_job == 0 || p->usage.sum_of_ticks < min)
+        {
+          shortest_job = p;
+          min = p->usage.sum_of_ticks;
+        }
+        else if (p->usage.sum_of_ticks == min)
+        { // handle tie with closer deadline
+          if (p->usage.has_deadline)
+          {
+            if (shortest_job->usage.has_deadline)
+            {
+              if (p->usage.deadline < shortest_job->usage.deadline)
+              {
+                shortest_job = p;
+                min = p->usage.sum_of_ticks;
+              }
+            }
+            else
+            {
+              shortest_job = p;
+              min = p->usage.sum_of_ticks;
+            }
+          }
+        }
+      }
+    }
+
+    // pick from low priority array, if no normal priority is runnable
+    if (shortest_job == 0 && low_priority_n > 0)
+    {
+      for (int i = 0; i < low_priority_n; i++)
+      {
+        p = low_priority[i];
+        if (shortest_job == 0 || p->usage.sum_of_ticks < min)
+        {
+          shortest_job = p;
+          min = p->usage.sum_of_ticks;
+        }
+        else if (p->usage.sum_of_ticks == min)
+        { // handle tie with closer deadline
+          if (p->usage.has_deadline)
+          {
+            if (shortest_job->usage.has_deadline)
+            {
+              if (p->usage.deadline < shortest_job->usage.deadline)
+              {
+                shortest_job = p;
+              }
+            }
+            else
+            {
+              shortest_job = p;
+            }
+          }
+        }
+      }
+    }
+    p = shortest_job;
+    // end
+    if (p != 0)
     {
       acquire(&p->lock);
       if (p->state == RUNNABLE)
       {
+        // printf("\nvaredshod111  : %d\n", p->pid);
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
@@ -525,7 +599,27 @@ void scheduler(void)
         }
         else
         {
+          if (myproc()->usage.start_tick == -1)
+          {
+            myproc()->usage.start_tick = ticks;
+          }
+          uint temp = ticks;
           swtch(&c->context, &p->context);
+          myproc()->usage.sum_of_ticks += ticks - temp;
+          for (struct proc *p = proc; p < &proc[NPROC]; p++)
+          {
+            if (p->killed != 1 && p->usage.has_deadline)
+            {
+              if (p->usage.deadline <= ticks)
+              {
+                if (p->state == SLEEPING)
+                  p->state = RUNNABLE;
+                p->killed = 1;
+                printf("id: %d\n", p->pid);
+              }
+            }
+          }
+          // printf("sch id: %d %d  %d %d\n", myproc()->pid, ticks, myproc()->usage.start_tick,myproc()->usage.sum_of_ticks);
         }
 
         // Process is done running for now.
@@ -861,11 +955,6 @@ void report_traps(struct report_traps *traps)
 int thread_num = 1;
 struct spinlock thread_id_lock;
 
-void thread_init()
-{
-  initlock(&thread_id_lock, "thread_id_lock");
-}
-
 int create_thread(void *(*function)(void *), void *arg, void *stack)
 {
   struct proc *thisProcess = myproc();
@@ -946,6 +1035,94 @@ int stop_thread(int id)
         return 0;
       }
     }
+  }
+  return -1;
+}
+
+void calcu_usage(struct proc_info *po)
+{
+  po->pid = myproc()->pid;
+  strncpy(po->name, myproc()->name, sizeof(myproc()->name));
+  po->ppid = myproc()->parent->pid;
+  po->state = myproc()->state;
+  po->usage = myproc()->usage;
+  // printf("%d\n", po->usage.sum_of_ticks);
+  return;
+}
+
+int total_usages(struct top *t)
+{
+  struct proc_info pi;
+  struct proc *p;
+  t->count = 0;
+  for (p = proc; p < &proc[NPROC]; p++)
+  {
+    acquire(&p->lock);
+    if (p->state != UNUSED)
+    {
+      strncpy(pi.name, p->name, sizeof(p->name));
+      pi.pid = p->pid;
+      if (p->parent)
+        pi.ppid = p->parent->pid;
+      else
+        pi.ppid = -1;
+      pi.state = p->state;
+      pi.usage = p->usage;
+      // printf("usage: %d\n", pi.usage.sum_of_ticks);
+      t->processes[t->count++] = pi;
+    }
+    release(&p->lock);
+  }
+  return 0;
+}
+
+int cpu_set_quota(int pid, int quota)
+{
+  struct child_processes child_proc;
+  find_children(&child_proc);
+  struct proc *p;
+  int is_found = 0;
+  if (myproc()->pid == pid)
+  {
+    myproc()->usage.quota = quota;
+    is_found = 1;
+  }
+
+  for (int i = 0; i < child_proc.count; i++)
+  {
+    if (child_proc.processes[i].pid == pid)
+    {
+      for (p = proc; p < &proc[NPROC]; p++)
+      {
+        if (p->pid == pid)
+        {
+          p->usage.quota = quota;
+          is_found = 1;
+        }
+      }
+    }
+  }
+  if (is_found)
+    return 0;
+  else
+    return -1;
+}
+
+int fork2(int deadline)
+{
+  int pid = fork();
+  struct proc *p;
+  for (p = proc; p < &proc[NPROC]; p++)
+  {
+    acquire(&p->lock);
+    if (pid == p->pid)
+    {
+      p->usage.deadline = deadline + ticks;
+      p->usage.has_deadline = 1;
+      release(&p->lock);
+      return pid;
+    }
+    release(&p->lock);
   }
   return -1;
 }

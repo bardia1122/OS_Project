@@ -142,6 +142,10 @@ UPROGS=\
 	$U/_chptest\
 	$U/_trap_report\
 	$U/_thread_test\
+	$U/_cpu_usage\
+	$U/_test_top\
+	$U/_quota\
+	$U/_fork2\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

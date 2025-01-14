@@ -150,3 +150,44 @@ sys_sthread(void)
   printf("aa\n");
   return 0;
 }
+
+uint64
+sys_cpu_usage(void)
+{
+  uint64 p;
+  argaddr(0, &p);
+  struct proc_info po;
+  calcu_usage(&po);
+  copyout(myproc()->pagetable, p, (char *)&po, sizeof(po));
+  return 0;
+}
+
+uint64
+sys_top(void)
+{
+  uint64 t;
+  argaddr(0, &t);
+  struct top to;
+  total_usages(&to);
+  copyout(myproc()->pagetable, t, (char *)&to, sizeof(to));
+  return 0;
+}
+
+uint64
+sys_set_quota(void)
+{
+  uint64 p;
+  argaddr(0, &p);
+  uint64 q;
+  argaddr(1, &q);
+  cpu_set_quota(p, q);
+  return 0;
+}
+uint64
+sys_fork2(void)
+{
+  uint64 l;
+  argaddr(0, &l);
+  int pid = fork2(l);
+  return pid;
+}

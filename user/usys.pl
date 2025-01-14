@@ -41,3 +41,7 @@ entry("report");
 entry("cthread");
 entry("jthread");
 entry("sthread");
+entry("cpu_usage");
+entry("top");
+entry("set_quota");
+entry("fork2");

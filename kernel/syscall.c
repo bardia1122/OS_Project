@@ -102,6 +102,10 @@ extern uint64 sys_report(void);
 extern uint64 sys_cthread(void);
 extern uint64 sys_jthread(void);
 extern uint64 sys_sthread(void);
+extern uint64 sys_cpu_usage(void);
+extern uint64 sys_top(void);
+extern uint64 sys_set_quota(void);
+extern uint64 sys_fork2(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -132,6 +136,10 @@ static uint64 (*syscalls[])(void) = {
     [SYS_cthread] sys_cthread,
     [SYS_jthread] sys_jthread,
     [SYS_sthread] sys_sthread,
+    [SYS_cpu_usage] sys_cpu_usage,
+    [SYS_top] sys_top,
+    [SYS_set_quota] sys_set_quota,
+    [SYS_fork2] sys_fork2,
 };
 
 void syscall(void)

@@ -3,20 +3,20 @@
 #include "user/user.h"
 #define MAX_REPORT_BUFFER_SIZE 10
 
-struct report
-{
-    char pname[16]; // Process Name
-    int pid;        // Process ID
-    uint64 scause;  // Supervisor Trap Cause
-    uint64 sepc;    // Supervisor Exception Program Counter
-    uint64 stval;   // Supervisor Trap Value
-};
+// struct report
+// {
+//     char pname[16]; // Process Name
+//     int pid;        // Process ID
+//     uint64 scause;  // Supervisor Trap Cause
+//     uint64 sepc;    // Supervisor Exception Program Counter
+//     uint64 stval;   // Supervisor Trap Value
+// };
 
-struct report_traps
-{
-    struct report reports[MAX_REPORT_BUFFER_SIZE];
-    int count;
-};
+// struct report_traps
+// {
+//     struct report reports[MAX_REPORT_BUFFER_SIZE];
+//     int count;
+// };
 
 int main()
 {
@@ -42,7 +42,7 @@ int main()
                trap.reports[i].pid,
                trap.reports[i].pname,
                trap.reports[i].scause,
-               trap.reports[i].sepc,
+               trap.reports[i].spec,
                trap.reports[i].stval);
     }
 }

@@ -4,6 +4,62 @@ struct child_processes;
 struct report;
 struct _internal_report_list;
 struct report_traps;
+#define NPROC 64
+enum procstate
+{
+    UNUSED,
+    USED,
+    SLEEPING,
+    RUNNABLE,
+    RUNNING,
+    ZOMBIE
+};
+struct cpu_usage
+{
+    uint sum_of_ticks;
+    uint start_tick;
+    uint quota;
+    uint has_deadline;
+    uint deadline;
+};
+
+struct proc_info
+{
+    char name[16];
+    int pid;
+    int ppid;
+    enum procstate state;
+    struct cpu_usage usage;
+};
+
+struct top
+{
+    int count;
+    struct proc_info processes[NPROC];
+};
+struct child_processes
+{
+    int count;
+    struct proc_info processes[NPROC];
+};
+
+#define MAX_REPORT_BUFFER_SIZE 10
+
+struct report
+{
+    char pname[16];
+    int pid;
+    uint64 scause;
+    uint64 spec;
+    uint64 stval;
+};
+
+struct report_traps
+{
+    struct report reports[MAX_REPORT_BUFFER_SIZE];
+    int count;
+};
+struct stat;
 
 // system calls
 int fork(void);
@@ -32,6 +88,10 @@ int report(struct report_traps *);
 int cthread(void *(*function)(void *), void *arg, void *stack);
 int jthread(int id);
 int sthread(void);
+int cpu_usage(struct proc_info *po);
+int top(struct top *t);
+int set_quota(int pid, int quota);
+int fork2(int deadline);
 // ulib.c
 int stat(const char *, struct stat *);
 char *strcpy(char *, const char *);

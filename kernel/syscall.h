@@ -25,3 +25,7 @@
 #define SYS_cthread 24
 #define SYS_jthread 25
 #define SYS_sthread 26
+#define SYS_cpu_usage 27
+#define SYS_top 28
+#define SYS_set_quota 29
+#define SYS_fork2 30
