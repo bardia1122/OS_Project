@@ -1068,7 +1068,6 @@ int total_usages(struct top *t)
         pi.ppid = -1;
       pi.state = p->state;
       pi.usage = p->usage;
-      // printf("usage: %d\n", pi.usage.sum_of_ticks);
       t->processes[t->count++] = pi;
     }
     release(&p->lock);
