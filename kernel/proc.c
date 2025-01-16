@@ -1046,7 +1046,6 @@ void calcu_usage(struct proc_info *po)
   po->ppid = myproc()->parent->pid;
   po->state = myproc()->state;
   po->usage = myproc()->usage;
-  // printf("%d\n", po->usage.sum_of_ticks);
   return;
 }
 
